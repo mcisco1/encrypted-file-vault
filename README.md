@@ -18,7 +18,7 @@ A zero-knowledge encrypted file storage system built with Flask and modern crypt
 
 # TEST 1: LOGIN PAGE 
 
-"Secure authentication using Argon2id key derivation. Passwords are never transmitted — only a SHA-512 pre-hash is sent to the server."
+# "Secure authentication using Argon2id key derivation. Passwords are never transmitted — only a SHA-512 pre-hash is sent to the server."
 
 <img width="2238" height="1304" alt="image" src="https://github.com/user-attachments/assets/ff94e9f3-34c3-4665-bb9a-b01da60ffa75" />
 
