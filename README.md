@@ -23,7 +23,40 @@ A zero-knowledge encrypted file storage system built with Flask and modern crypt
 <img width="2238" height="1304" alt="image" src="https://github.com/user-attachments/assets/ff94e9f3-34c3-4665-bb9a-b01da60ffa75" />
 
 
-# TEST
+# TEST 2 DASHBOARD 
+
+# "The vault dashboard. All filenames are encrypted at rest using AES-256-GCM — even the server cannot read what files you have stored."
+
+<img width="2239" height="1260" alt="dashboard" src="https://github.com/user-attachments/assets/a656b4b3-c84a-4f2c-8881-e51f435e0c63" />
+
+# TEST 3 AUDIT LOG
+
+# "Every vault action is logged with timestamps and IP addresses. Users have full visibility into who accessed their files and when."
+
+
+<img width="2239" height="1262" alt="auditlog" src="https://github.com/user-attachments/assets/55e59a28-f599-4f88-93e6-987902de329b" />
+
+# TEST 4 DB Browser
+
+# "Proof of zero-knowledge encryption. The vault_files table shows encrypted blobs — filenames, file keys, and content are completely unreadable at the database level even if the server is compromised."
+
+
+
+<img width="2239" height="1349" alt="blob" src="https://github.com/user-attachments/assets/47b1f491-453c-4ddf-88ce-c101ed7e4a54" />
+
+# TEST 5 RATE LIMIT 
+
+# "Brute-force protection in action. Authentication is rate-limited to 10 attempts per 5-minute window before lockout is triggered."
+
+<img width="2238" height="1308" alt="ratelimitng" src="https://github.com/user-attachments/assets/25a3be5a-f879-4d88-bd88-053b9d07c41e" />
+
+# TEST 6 TEST PASSING
+
+# "Full test suite covering cryptographic correctness, API integration, session management, and rate limiting. All tests passing."
+
+
+<img width="1747" height="1202" alt="tests" src="https://github.com/user-attachments/assets/917803c9-c292-4209-9fc6-29029bc0ff18" />
+
 
 
 
