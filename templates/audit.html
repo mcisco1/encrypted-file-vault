@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Vault &mdash; Audit Log{% endblock %}
+{% block body %}
+<div class="vault-layout" id="audit-container">
+    <nav class="vault-nav">
+        <div class="nav-brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L3 7v6c0 5.25 3.75 10.08 9 11.25C17.25 23.08 21 18.25 21 13V7l-9-5z"/>
+                <path d="M9 12l2 2 4-4"/>
+            </svg>
+            <span>VAULT</span>
+        </div>
+        <div class="nav-tabs">
+            <a class="nav-tab" href="/vault">My Vault</a>
+            <a class="nav-tab" href="/vault">Shared With Me</a>
+            <a class="nav-tab active" href="/vault/audit">Audit Log</a>
+        </div>
+        <div class="nav-user">
+            <span class="session-timer" id="session-timer" title="Session time remaining"></span>
+            <span class="nav-username">{{ username }}</span>
+            <button class="btn btn-ghost" id="logout-btn">Sign Out</button>
+        </div>
+    </nav>
+
+    <main class="vault-main">
+        <div class="section-header">
+            <h2>Access Audit Log</h2>
+            <div class="audit-filters">
+                <select id="audit-filter" class="form-select">
+                    <option value="">All Events</option>
+                    <option value="register">Register</option>
+                    <option value="login">Login</option>
+                    <option value="failed_login">Failed Login</option>
+                    <option value="logout">Logout</option>
+                    <option value="file_upload">Upload</option>
+                    <option value="file_download">Download</option>
+                    <option value="file_share">Share</option>
+                    <option value="file_delete">Delete</option>
+                    <option value="shared_download">Shared Download</option>
+                    <option value="version_download">Version Download</option>
+                    <option value="2fa_enabled">2FA Enabled</option>
+                    <option value="2fa_disabled">2FA Disabled</option>
+                </select>
+            </div>
+        </div>
+        <div class="file-table-wrap">
+            <table class="file-table audit-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Action</th>
+                        <th>File</th>
+                        <th>Details</th>
+                        <th>IP Address</th>
+                    </tr>
+                </thead>
+                <tbody id="audit-list"></tbody>
+            </table>
+            <div class="empty-state" id="audit-empty" style="display:none">
+                <p>No audit events</p>
+            </div>
+        </div>
+    </main>
+</div>
+<div class="toast-container" id="toast-container"></div>
+{% endblock %}

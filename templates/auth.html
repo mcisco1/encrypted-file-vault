@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Vault &mdash; Authenticate{% endblock %}
+{% block body %}
+<div class="auth-bg">
+    <div class="auth-ambient"></div>
+    <div class="auth-card">
+        <div class="auth-logo">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L3 7v6c0 5.25 3.75 10.08 9 11.25C17.25 23.08 21 18.25 21 13V7l-9-5z"/>
+                <path d="M9 12l2 2 4-4"/>
+            </svg>
+            <h1>VAULT</h1>
+            <p class="auth-subtitle">Encrypted File Storage</p>
+        </div>
+
+        <div class="auth-tabs">
+            <button class="auth-tab active" data-tab="login">Sign In</button>
+            <button class="auth-tab" data-tab="register">Create Account</button>
+        </div>
+
+        <form id="auth-form" autocomplete="off">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" class="form-input" placeholder="Enter username" required minlength="3" maxlength="80" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label for="password">Master Password</label>
+                <input type="password" id="password" class="form-input" placeholder="Enter master password" required minlength="8" autocomplete="off">
+            </div>
+            <div id="strength-group" class="strength-group" style="display:none">
+                <div class="strength-bar">
+                    <div class="strength-fill" id="strength-fill"></div>
+                </div>
+                <span class="strength-label" id="strength-label"></span>
+            </div>
+            <div class="form-group" id="confirm-group" style="display:none">
+                <label for="confirm-password">Confirm Password</label>
+                <input type="password" id="confirm-password" class="form-input" placeholder="Confirm password" autocomplete="off">
+            </div>
+            <div class="form-group" id="totp-group" style="display:none">
+                <label for="totp-code">Two-Factor Code</label>
+                <input type="text" id="totp-code" class="form-input" placeholder="Enter 6-digit code" maxlength="6" autocomplete="off" inputmode="numeric" pattern="[0-9]{6}">
+            </div>
+            <div id="auth-error" class="form-error" style="display:none"></div>
+            <button type="submit" class="btn btn-primary btn-full" id="auth-submit">
+                <span class="btn-text">Sign In</span>
+                <span class="btn-loader" style="display:none"></span>
+            </button>
+        </form>
+
+        <p class="auth-footer">Your master password never leaves this device.</p>
+    </div>
+</div>
+{% endblock %}

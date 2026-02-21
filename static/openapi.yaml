@@ -1,0 +1,601 @@
+openapi: 3.0.3
+info:
+  title: Encrypted File Vault API
+  description: |
+    Zero-knowledge encrypted file storage API. Files are encrypted client-side
+    using AES-256-GCM via the Web Crypto API. The server never sees plaintext
+    file content.
+
+    ## Authentication
+    All authenticated endpoints require a `session_token` cookie obtained via
+    the login endpoint. Sessions expire after 1 hour of inactivity.
+
+    ## Cryptographic Flow
+    1. Client hashes password with SHA-512(password + username)
+    2. Server derives keys via Argon2id → HKDF (master_key + auth_key)
+    3. Server returns master_key to client after successful auth
+    4. Client uses master_key for file encryption/decryption
+  version: 1.0.0
+  contact:
+    name: Vault API
+
+servers:
+  - url: http://localhost:5000
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Authentication and session management
+  - name: 2FA
+    description: Two-factor authentication (TOTP)
+  - name: Files
+    description: Encrypted file operations
+  - name: Sharing
+    description: File sharing between users
+  - name: Audit
+    description: Access audit log
+  - name: System
+    description: Health and system endpoints
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      description: Returns the health status of the application including database and storage checks.
+      responses:
+        '200':
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, degraded]
+                  database:
+                    type: boolean
+                  storage:
+                    type: boolean
+                  timestamp:
+                    type: string
+                    format: date-time
+        '503':
+          description: System is degraded
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Create a new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, pre_auth_key]
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 80
+                  description: Alphanumeric with hyphens, underscores, and periods
+                pre_auth_key:
+                  type: string
+                  description: Base64-encoded SHA-512(password + username)
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  master_key:
+                    type: string
+                    description: Base64-encoded master key for client-side crypto
+          headers:
+            Set-Cookie:
+              description: Session token cookie
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Username already taken
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Sign in
+      description: |
+        Authenticates the user. If 2FA is enabled, returns a temp_token
+        that must be validated via `/api/auth/2fa/validate`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, pre_auth_key]
+              properties:
+                username:
+                  type: string
+                pre_auth_key:
+                  type: string
+      responses:
+        '200':
+          description: Login successful or 2FA required
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      success:
+                        type: boolean
+                      master_key:
+                        type: string
+                  - type: object
+                    properties:
+                      success:
+                        type: boolean
+                      requires_2fa:
+                        type: boolean
+                      temp_token:
+                        type: string
+        '401':
+          description: Invalid credentials
+        '429':
+          description: Too many login attempts
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Sign out
+      responses:
+        '200':
+          description: Logged out successfully
+
+  /api/auth/session:
+    get:
+      tags: [Auth]
+      summary: Get session info
+      description: Returns remaining session time. Does NOT extend the session.
+      responses:
+        '200':
+          description: Session info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  remaining:
+                    type: integer
+                    description: Seconds until session expires
+                  ttl:
+                    type: integer
+                    description: Total session TTL in seconds
+        '401':
+          description: Not authenticated
+
+  /api/auth/2fa/setup:
+    post:
+      tags: [2FA]
+      summary: Start 2FA setup
+      description: Generates a TOTP secret and provisioning URI. Requires authentication.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: TOTP secret generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  secret:
+                    type: string
+                    description: Base32-encoded TOTP secret
+                  provisioning_uri:
+                    type: string
+                    description: otpauth:// URI for QR code
+        '400':
+          description: 2FA already enabled
+
+  /api/auth/2fa/verify:
+    post:
+      tags: [2FA]
+      summary: Verify and enable 2FA
+      description: Verify a TOTP code to enable 2FA for the account.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code:
+                  type: string
+                  pattern: '^\d{6}$'
+      responses:
+        '200':
+          description: 2FA enabled
+        '401':
+          description: Invalid TOTP code
+
+  /api/auth/2fa/validate:
+    post:
+      tags: [2FA]
+      summary: Validate 2FA during login
+      description: Complete login when 2FA is enabled by providing the temp_token and TOTP code.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [temp_token, code]
+              properties:
+                temp_token:
+                  type: string
+                code:
+                  type: string
+                  pattern: '^\d{6}$'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  master_key:
+                    type: string
+        '401':
+          description: Invalid or expired token/code
+
+  /api/auth/2fa/disable:
+    post:
+      tags: [2FA]
+      summary: Disable 2FA
+      description: Disable two-factor authentication. Requires a valid TOTP code.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code:
+                  type: string
+                  pattern: '^\d{6}$'
+      responses:
+        '200':
+          description: 2FA disabled
+        '401':
+          description: Invalid TOTP code
+
+  /api/vault/files:
+    get:
+      tags: [Files]
+      summary: List encrypted files
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: File list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        filename:
+                          type: string
+                        current_version:
+                          type: integer
+                        size:
+                          type: integer
+                        versions:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              version:
+                                type: integer
+                              size:
+                                type: integer
+                              created_at:
+                                type: string
+                        created_at:
+                          type: string
+                        updated_at:
+                          type: string
+
+  /api/vault/upload:
+    post:
+      tags: [Files]
+      summary: Upload and encrypt a file
+      description: Upload a file (multipart). The server encrypts it with a per-file AES-256-GCM key.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  file_id:
+                    type: string
+                  version:
+                    type: integer
+        '413':
+          description: File too large
+
+  /api/vault/files/{file_id}/download:
+    get:
+      tags: [Files]
+      summary: Download latest version
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Decrypted file content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found
+
+  /api/vault/files/{file_id}/download/{version}:
+    get:
+      tags: [Files]
+      summary: Download specific version
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Decrypted file content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File or version not found
+
+  /api/vault/files/{file_id}:
+    delete:
+      tags: [Files]
+      summary: Delete a file
+      description: Permanently deletes the file, all versions, and all shares.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File deleted
+        '404':
+          description: File not found
+
+  /api/vault/files/{file_id}/share:
+    post:
+      tags: [Sharing]
+      summary: Share a file
+      description: |
+        Share an encrypted file with another user using X25519 ECDH key exchange.
+        The file key is re-wrapped using the derived shared secret.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipient]
+              properties:
+                recipient:
+                  type: string
+                  description: Recipient username
+      responses:
+        '200':
+          description: File shared
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  share_id:
+                    type: string
+        '404':
+          description: File or recipient not found
+        '409':
+          description: Already shared with this user
+
+  /api/vault/shared:
+    get:
+      tags: [Sharing]
+      summary: List files shared with me
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Shared file list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  shared_files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        share_id:
+                          type: string
+                        file_id:
+                          type: string
+                        filename:
+                          type: string
+                        sender:
+                          type: string
+                        shared_at:
+                          type: string
+                        size:
+                          type: integer
+                        available:
+                          type: boolean
+
+  /api/vault/shared/{share_id}/download:
+    get:
+      tags: [Sharing]
+      summary: Download a shared file
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: share_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Decrypted file content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Share not found or original file deleted
+
+  /api/vault/audit:
+    get:
+      tags: [Audit]
+      summary: Get audit log
+      description: Returns the last 200 audit log entries for the authenticated user.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Audit log
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  logs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        action:
+                          type: string
+                          enum: [register, login, failed_login, logout, file_upload, file_download, version_download, file_share, shared_download, file_delete, 2fa_enabled, 2fa_disabled]
+                        ip_address:
+                          type: string
+                        timestamp:
+                          type: string
+                        details:
+                          type: string
+                        filename:
+                          type: string
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session_token
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string

@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+vault_data/
+storage/
+*.db
+.git/
+.gitignore
+.env
+*.md
+tests/
+.claude/
