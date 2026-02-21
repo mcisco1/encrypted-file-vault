@@ -13,6 +13,21 @@ A zero-knowledge encrypted file storage system built with Flask and modern crypt
 - **Session Management** — Time-limited sessions with idle timeout
 - **Rate Limiting** — Brute-force protection on authentication endpoints
 
+
+# TESTS/SCREENSHOTS. All screenshots are test and for demonstration and project purposes only. Future improvements may or may not be made and ready for production if i decide to go further with it.
+
+# TEST 1: LOGIN PAGE 
+
+"Secure authentication using Argon2id key derivation. Passwords are never transmitted — only a SHA-512 pre-hash is sent to the server."
+
+<img width="2238" height="1304" alt="image" src="https://github.com/user-attachments/assets/ff94e9f3-34c3-4665-bb9a-b01da60ffa75" />
+
+
+# TEST
+
+
+
+
 ## Tech Stack
 
 | Layer | Technology |
