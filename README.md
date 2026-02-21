@@ -249,3 +249,6 @@ encrypted-file-vault/
 - **TOTP 2FA** — strongly recommended for production use. TOTP secrets are encrypted with your master key.
 - **Session timeout** — sessions expire after 1 hour of inactivity. The client displays a countdown timer.
 - **Backup your data** — the `storage/` directory and `vault.db` contain all encrypted files and metadata.
+
+
+# NOTE, AI used in some parts of README to help depict architecture and speed things up when writing purpose and technologies needed. Most logic/functionality was done by me
