@@ -25,7 +25,7 @@ A zero-knowledge encrypted file storage system built with Flask and modern crypt
 
 # TEST 2 DASHBOARD 
 
-# "The vault dashboard. All filenames are encrypted at rest using AES-256-GCM — even the server cannot read what files you have stored."
+# "The vault dashboard. All filenames are encrypted at rest using AES-256-GCM — even the server cannot read what files you have stored." 
 
 <img width="2239" height="1260" alt="dashboard" src="https://github.com/user-attachments/assets/a656b4b3-c84a-4f2c-8881-e51f435e0c63" />
 
